@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#define nline '\n'
 
 int main(int argc, char **argv) {
   // Flush after every std::cout / std::cerr
@@ -56,8 +57,20 @@ int main(int argc, char **argv) {
   
   int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, (socklen_t*)&client_addr_len);
   std::cout << "Client connected\n";
-  const char *response = "+PONG\r\n";
-  send(client_fd, response, strlen(response), 0);
+  char buffer[1024] = {0};
+  while(true){
+    int bytes_read = read(client_fd,buffer,sizeof(buffer));
+    if(bytes_read < 0){
+      std::cerr << "failed to read" << nline;
+      return 1;
+    }
+    std::string request(buffer);
+
+    if(request.find("PING") != std::string::npos){
+      std::string respond ("+PONG\r\n");
+      write(client_fd,respond.c_str(),respond.size());
+    }
+  }
 
   close(client_fd);
   close(server_fd);
