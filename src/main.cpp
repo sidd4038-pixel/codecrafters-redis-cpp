@@ -8,19 +8,24 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <thread>
+#include "redis_parser.hpp"
 #define nline '\n'
 
-void handleResponse(int client_fd){
+void handleClient(int client_fd){
   char buffer[1024];
+  int num_bytes;
   while(true){
-    int num_bytes = recv(client_fd,buffer,sizeof(buffer)-1,0);
+    num_bytes = recv(client_fd,buffer,sizeof(buffer)-1,0);
     if(num_bytes <= 0){
       std::cerr << "Failed to read payload." << nline;
-      close(client_fd);
     }
-      std::string response = std::string("+PONG\r\n");
-      send(client_fd,response.c_str(),response.size(),0);
+    buffer[num_bytes] = '\0';
+    std::cout<< "Received: " << buffer << nline;
+    std::vector<std::string> parsed_command;
+    parse_redis_command(buffer,parsed_command);
+    execute_redis_command(client_fd,parsed_command);
   }
+  close(client_fd);
 }
 
 int main(int argc, char **argv) {
@@ -64,7 +69,7 @@ int main(int argc, char **argv) {
     std::cout << "Waiting for a client to connect...\n";
     int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, (socklen_t*)&client_addr_len);
     std::cout << "Client connected\n";
-    std::thread client_thread(handleResponse,client_fd);
+    std::thread client_thread(handleClient,client_fd);
     client_thread.detach();
   }
 
