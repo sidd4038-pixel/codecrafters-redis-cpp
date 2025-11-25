@@ -22,6 +22,9 @@ void handleResponse(int client_fd){
     buffer[num_bytes] = '\0';
     std::string request(buffer);
 
+    // Ignore empty messages
+    if (request.size() == 0) continue;
+
     if(request.find("PING") != std::string::npos){
       std::string response = std::string("+PONG\r\n");
       send(client_fd,response.c_str(),response.size(),0);
