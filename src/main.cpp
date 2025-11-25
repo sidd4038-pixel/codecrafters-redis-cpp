@@ -17,18 +17,9 @@ void handleResponse(int client_fd){
     if(num_bytes <= 0){
       std::cerr << "Failed to read payload." << nline;
       close(client_fd);
-      return;
     }
-    buffer[num_bytes] = '\0';
-    std::string request(buffer);
-
-    // Ignore empty messages
-    if (request.size() == 0) continue;
-
-    if(request.find("PING") != std::string::npos){
       std::string response = std::string("+PONG\r\n");
       send(client_fd,response.c_str(),response.size(),0);
-    }
   }
 }
 
@@ -81,10 +72,7 @@ int main(int argc, char **argv) {
   int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, (socklen_t*)&client_addr_len);
   std::cout << "Client connected\n";
   std::thread client_thread(handleResponse,client_fd);
-  client_thread.join();
-
-  close(client_fd);
-  close(server_fd);
+  client_thread.detach();
 
   return 0;
 }
